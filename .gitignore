@@ -1,0 +1,6 @@
+# Dataset
+data/
+
+# Jetbrains
+.idea/
+__pycache__/
