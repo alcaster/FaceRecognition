@@ -5,18 +5,26 @@ from functools import partial
 from sklearn.preprocessing import LabelEncoder
 
 
-def _parse_function(img_size, num_classes, filename, label):
-    image_string = tf.read_file(filename)
+def _parse_function(img_size, num_classes, is_train, filename, label, scope=None):
+    with tf.name_scope(scope, 'parse', [filename, label]):
+        image_string = tf.read_file(filename)
+        image_decoded = tf.image.decode_png(image_string, channels=3)
+        image_decoded = tf.cast(image_decoded, tf.float32)
+        image = tf.image.resize_images(image_decoded, [img_size, img_size])
+        if is_train:
+            image = _augment_image(image)
+        label = tf.one_hot(label, num_classes)  # [batch_size, img_size, img_size, channels]
 
-    image_decoded = tf.image.decode_png(image_string, channels=3)
-    image_decoded = tf.cast(image_decoded, tf.float32)
-    image = tf.image.resize_images(image_decoded, [img_size, img_size])
-    image = tf.image.random_flip_left_right(image)
-    # image = tf.image.random_brightness(image, 0.2) # Test various settings
-    # image = tf.image.random_hue(image, 0.2)
-    label = tf.one_hot(label, num_classes)  # [batch_size, img_size, img_size, channels]
+        return image, label
 
-    return image, label
+
+def _augment_image(image: tf.Tensor, scope=None) -> tf.Tensor:
+    with tf.name_scope(scope, 'augmentation', image):
+        image = tf.image.random_flip_left_right(image)
+        image = tf.image.random_brightness(image, 0.2)
+        image = tf.image.random_contrast(image, lower=0.2, upper=1.2)
+        image = tf.image.random_hue(image, 0.2)
+    return image
 
 
 def get_train_n_test_datasets(data_dir: str, test_set_size: float, epochs: int, batch_size: int, img_size: int,
@@ -27,14 +35,15 @@ def get_train_n_test_datasets(data_dir: str, test_set_size: float, epochs: int, 
     labels = le.fit_transform(labels)
     num_classes = len(set(labels))
     X_train, X_test, y_train, y_test = train_test_split(images_paths, labels, test_size=test_set_size)
-    _parse_w_args = partial(_parse_function, img_size, num_classes)
 
+    _parse_w_args = partial(_parse_function, img_size, num_classes, True)
     dataset_train = tf.data.Dataset.from_tensor_slices((X_train, y_train))
     dataset_train = dataset_train.shuffle(buffer_size=buffer_size)
     dataset_train = dataset_train.map(_parse_w_args, num_parallel_calls=num_parallel)
     dataset_train = dataset_train.repeat(epochs)
     dataset_train = dataset_train.batch(batch_size)
 
+    _parse_w_args = partial(_parse_function, img_size, num_classes, False)
     dataset_test = tf.data.Dataset.from_tensor_slices((X_test, y_test))
     dataset_test = dataset_test.map(_parse_w_args, num_parallel_calls=num_parallel)
     dataset_test = dataset_test.batch(batch_size)
