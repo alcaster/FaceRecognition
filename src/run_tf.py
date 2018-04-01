@@ -18,12 +18,12 @@ def training(iterator, training_init_op, validation_init_op):
         x, y = iterator.get_next()
 
 
-
 def main():
     print(device_lib.list_local_devices())
     iterator, training_init_op, validation_init_op = get_train_n_test_datasets(cfg.data_path, cfg.test_size, cfg.epochs,
                                                                                cfg.batch_size,
-                                                                               cfg.img_size, cfg.num_parallel,cfg.buffer_size)
+                                                                               cfg.img_size, cfg.num_parallel,
+                                                                               cfg.buffer_size)
     if cfg.train:
         training(iterator, training_init_op, validation_init_op)
 
