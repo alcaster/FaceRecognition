@@ -27,9 +27,9 @@ def _augment_image(image: tf.Tensor, scope=None) -> tf.Tensor:
     return image
 
 
-def get_train_n_test_datasets(data_dir: str, test_set_size: float, epochs: int, batch_size: int, img_size: int,
-                              num_parallel: int, buffer_size: int) -> (
-        tf.data.Iterator, tf.data.Iterator, tf.data.Iterator, tuple):
+def get_train_test_iterators(data_dir: str, test_set_size: float, epochs: int, batch_size: int, img_size: int,
+                             num_parallel: int, buffer_size: int) -> (
+        tf.data.Iterator, tf.placeholder, tf.data.Iterator, tf.data.Iterator, tuple):
     le = LabelEncoder()
     images_paths, labels = get_images_paths(data_dir)
     labels = le.fit_transform(labels)
@@ -49,11 +49,15 @@ def get_train_n_test_datasets(data_dir: str, test_set_size: float, epochs: int, 
     dataset_test = dataset_test.map(_parse_w_args, num_parallel_calls=num_parallel)
     dataset_test = dataset_test.batch(batch_size)
 
-    iterator = tf.data.Iterator.from_structure(dataset_train.output_types,
-                                               dataset_test.output_shapes)
-    training_init_op = iterator.make_initializer(dataset_train)
-    validation_init_op = iterator.make_initializer(dataset_test)
-    return iterator, training_init_op, validation_init_op, (dataset_size*(1-test_set_size), dataset_size*test_set_size)
+    handle = tf.placeholder(tf.string, shape=[])
+    iterator = tf.data.Iterator.from_string_handle(
+        handle, dataset_train.output_types, dataset_train.output_shapes)
+    training_iterator = dataset_train.make_one_shot_iterator()
+    validation_iterator = dataset_test.make_one_shot_iterator()
+
+
+    return iterator, handle, training_iterator, validation_iterator, (
+    dataset_size * (1 - test_set_size), dataset_size * test_set_size)
 
 
 def get_images_paths(data_dir):
