@@ -1,5 +1,7 @@
 # Dataset
 data/
+# Saved checkpoints & tf board
+out/
 
 # Jetbrains
 .idea/

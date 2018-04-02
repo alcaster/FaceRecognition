@@ -29,11 +29,12 @@ def _augment_image(image: tf.Tensor, scope=None) -> tf.Tensor:
 
 def get_train_n_test_datasets(data_dir: str, test_set_size: float, epochs: int, batch_size: int, img_size: int,
                               num_parallel: int, buffer_size: int) -> (
-        tf.data.Iterator, tf.data.Iterator, tf.data.Iterator):
+        tf.data.Iterator, tf.data.Iterator, tf.data.Iterator, tuple):
     le = LabelEncoder()
     images_paths, labels = get_images_paths(data_dir)
     labels = le.fit_transform(labels)
     num_classes = len(set(labels))
+    dataset_size = len(labels)
     X_train, X_test, y_train, y_test = train_test_split(images_paths, labels, test_size=test_set_size)
 
     _parse_w_args = partial(_parse_function, img_size, num_classes, True)
@@ -52,7 +53,7 @@ def get_train_n_test_datasets(data_dir: str, test_set_size: float, epochs: int, 
                                                dataset_test.output_shapes)
     training_init_op = iterator.make_initializer(dataset_train)
     validation_init_op = iterator.make_initializer(dataset_test)
-    return iterator, training_init_op, validation_init_op
+    return iterator, training_init_op, validation_init_op, (dataset_size*(1-test_set_size), dataset_size*test_set_size)
 
 
 def get_images_paths(data_dir):
