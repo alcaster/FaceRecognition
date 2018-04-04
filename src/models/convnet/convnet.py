@@ -8,7 +8,7 @@ class Model:
 
     def __init__(self, image, label, num_classes, lr=1e-3):
         self.image = image
-        image_summary = tf.summary.image('preprocessed_image', image)
+        tf.summary.image('preprocessed_image', image)
         self.label = label
         self.NUM_CLASSES = num_classes
         self.CHANNELS = 3
