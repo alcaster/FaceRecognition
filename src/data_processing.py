@@ -12,8 +12,8 @@ def _parse_function(img_size, num_classes, is_train, filename, label, scope=None
         image_decoded = tf.cast(image_decoded, tf.float32)
         image = tf.image.resize_images(image_decoded, [img_size, img_size])
         if is_train:
-            image = _augment_image(image)
-        label = tf.one_hot(label, num_classes)  # [batch_size, img_size, img_size, channels]
+            image = _augment_image(image)  # [batch_size, img_size, img_size, channels]
+        label = tf.one_hot(label, num_classes)
 
         return image, label
 
@@ -21,9 +21,9 @@ def _parse_function(img_size, num_classes, is_train, filename, label, scope=None
 def _augment_image(image: tf.Tensor, scope=None) -> tf.Tensor:
     with tf.name_scope(scope, 'augmentation', image):
         image = tf.image.random_flip_left_right(image)
-        image = tf.image.random_brightness(image, 0.2)
-        image = tf.image.random_contrast(image, lower=0.2, upper=1.2)
-        image = tf.image.random_hue(image, 0.2)
+        image = tf.image.random_brightness(image, 0.4)
+        image = tf.image.random_contrast(image, lower=0.4, upper=1.4)
+        image = tf.image.random_hue(image, 0.4)
     return image
 
 
