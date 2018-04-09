@@ -83,9 +83,8 @@ def test(test_iterator: tf.data.Iterator, dataset_size: int, checkpoint_path: st
     image, label = test_iterator.get_next()
     model = Model(image, label, 4)
     with tf.Session() as sess:
-        saver = tf.train.import_meta_graph(meta_path)
+        saver = tf.train.Saver()
         saver.restore(sess, tf.train.latest_checkpoint(checkpoint_path))
-        sess.run(tf.global_variables_initializer())
         tf.logging.info(f"Successfully loaded model from checkpoint:{checkpoint_path} and meta graph:{meta_path}")
         i = 0
         total_acc = 0
