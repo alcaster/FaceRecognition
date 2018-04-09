@@ -78,14 +78,14 @@ def validate(model, handle, validation_handle, sess, steps=None):
     return accuracy_valid
 
 
-def test(test_iterator: tf.data.Iterator, dataset_size: int, checkpoint_path: str, meta_path: str):
+def test(test_iterator: tf.data.Iterator, dataset_size: int, checkpoint_path: str):
     start = time.time()
     image, label = test_iterator.get_next()
     model = Model(image, label, 4)
     with tf.Session() as sess:
         saver = tf.train.Saver()
         saver.restore(sess, tf.train.latest_checkpoint(checkpoint_path))
-        tf.logging.info(f"Successfully loaded model from checkpoint:{checkpoint_path} and meta graph:{meta_path}")
+        tf.logging.info(f"Successfully loaded model from checkpoint:{checkpoint_path}")
         i = 0
         total_acc = 0
         while True:
@@ -111,7 +111,7 @@ def main():
         test_iterator, dataset_size = get_test_iterator(FLAGS.test_set_path, FLAGS.img_size, FLAGS.batch_size,
                                                         FLAGS.num_parallel)
         tf.logging.info(f"Test dataset size {dataset_size}")
-        test(test_iterator, dataset_size, FLAGS.checkpoint_path, FLAGS.meta_path)
+        test(test_iterator, dataset_size, FLAGS.checkpoint_path)
     else:
         if tf.gfile.Exists(FLAGS.log_dir):
             tf.gfile.DeleteRecursively(FLAGS.log_dir)

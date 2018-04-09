@@ -8,7 +8,7 @@ class Model:
 
     def __init__(self, image, label, num_classes, lr=1e-3):
         self.image = image
-        tf.summary.image('preprocessed_image', image)
+        # tf.summary.image('preprocessed_image', image, max_outputs) # Stored too many images, producing very big tensorboard save files.
         self.label = label
         self.NUM_CLASSES = num_classes
         self.CHANNELS = 3
@@ -19,35 +19,36 @@ class Model:
 
     @define_scope(initializer=tf.contrib.slim.xavier_initializer())
     def prediction(self):
-        filter_size1 = 5  # Convolution filters are 5 x 5 pixels.
-        num_filters1 = 16  # There are 16 of these filters.
-        # Convolutional Layer 2.
-        filter_size2 = 5  # Convolution filters are 5 x 5 pixels.
-        num_filters2 = 36  # There are 36 of these filters.
-        # Fully-connected layer.
-        fc_size = 128  # Number of neurons in fully-connected layer
+        # Conv1
+        filter_size1 = 5
+        num_filters1 = 16
+        # Conv2.
+        filter_size2 = 5
+        num_filters2 = 36
+        # Fully-connected.
+        fc_size = 128
 
         layer_conv1, weights_conv1 = \
             new_conv_layer(input=self.image,
                            num_input_channels=self.CHANNELS,
                            filter_size=filter_size1,
                            num_filters=num_filters1,
-                           use_pooling=True)
+                           use_pooling=True, scope="Conv1")
         layer_conv2, weights_conv2 = \
             new_conv_layer(input=layer_conv1,
                            num_input_channels=num_filters1,
                            filter_size=filter_size2,
                            num_filters=num_filters2,
-                           use_pooling=True)
+                           use_pooling=True, scope="Conv2")
         layer_flat, num_features = flatten_layer(layer_conv2)
         layer_fc1 = new_fc_layer(input=layer_flat,
                                  num_inputs=num_features,
                                  num_outputs=fc_size,
-                                 use_relu=True)
+                                 use_relu=True, scope="Fully1")
         layer_fc2 = new_fc_layer(input=layer_fc1,
                                  num_inputs=fc_size,
                                  num_outputs=self.NUM_CLASSES,
-                                 use_relu=False)
+                                 use_relu=False, scope="Fully2")
         return layer_fc2
 
     @define_scope
