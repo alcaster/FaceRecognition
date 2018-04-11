@@ -15,7 +15,7 @@ class Model:
         self.lr = lr
         self.prediction
         self.optimize
-        self.accuracy
+        self.metrics
 
     @define_scope(initializer=tf.contrib.slim.xavier_initializer())
     def prediction(self):
@@ -64,10 +64,25 @@ class Model:
         return optimizer.minimize(loss)
 
     @define_scope
-    def accuracy(self):
+    def metrics(self):
         y_pred = tf.nn.softmax(self.prediction)
         y_pred_cls = tf.argmax(y_pred, axis=1)
         ground_truth = tf.argmax(self.label, 1)
         with tf.name_scope('correct_prediction'):
             correct_prediction = tf.equal(y_pred_cls, ground_truth)
-        return tf.reduce_mean(tf.cast(correct_prediction, tf.float32))
+
+        TP = tf.count_nonzero(y_pred_cls * ground_truth)
+        FP = tf.count_nonzero(y_pred_cls * (ground_truth - 1))
+        FN = tf.count_nonzero((y_pred_cls - 1) * ground_truth)
+
+        with tf.name_scope('accuracy'):
+            acc = tf.reduce_mean(tf.cast(correct_prediction, tf.float32))
+        with tf.name_scope('precision'):
+            precision = TP / (TP + FP)
+        with tf.name_scope('recall'):
+            recall = TP / (TP + FN)
+
+        tf.summary.scalar('accuracy', acc)
+        tf.summary.scalar('precision', precision)
+        tf.summary.scalar('recall', recall)
+        return acc, precision, recall

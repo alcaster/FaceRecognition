@@ -28,7 +28,7 @@ data_path
 │   │   example2.png
 │   class2
 │   │   example1.png""")
-parser.add_argument('--log_dir', type=str, default='../out/3', help='Directory where saved checkpoints will be stored.')
+parser.add_argument('--log_dir', type=str, default='../out/1', help='Directory where saved checkpoints will be stored.')
 
 ############################
 #   testing setting    #
@@ -36,6 +36,6 @@ parser.add_argument('--log_dir', type=str, default='../out/3', help='Directory w
 parser.add_argument('--test', action='store_true', help="Test? Default->training.")
 parser.add_argument('--test_set_path', type=str, default='../data/test',
                     help='Same format as data_path')
-parser.add_argument('--checkpoint_path', type=str, default='../out/3', help='')
+parser.add_argument('--checkpoint_path', type=str, default='../out/1', help='')
 
 FLAGS, unparsed = parser.parse_known_args()

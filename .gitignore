@@ -2,7 +2,8 @@
 data/
 # Saved checkpoints & tf board
 out/
-
+# Vim
+*.swp
 # Jetbrains
 .idea/
 __pycache__/
