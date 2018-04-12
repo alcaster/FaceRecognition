@@ -1,11 +1,9 @@
 from datetime import timedelta, datetime
-
 import itertools
-
 import os
-from tensorflow.python.client import device_lib
 import time
 import tensorflow as tf
+from tensorflow.python.client import device_lib
 
 from config import FLAGS
 from models.convnet.convnet import Model

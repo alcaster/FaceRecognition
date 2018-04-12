@@ -1,4 +1,5 @@
 import argparse
+
 from utils.argparse_utils import SmartFormatter
 
 parser = argparse.ArgumentParser(description='', formatter_class=SmartFormatter)

@@ -1,7 +1,8 @@
 import os
+from functools import partial
+
 import tensorflow as tf
 from sklearn.model_selection import train_test_split
-from functools import partial
 from sklearn.preprocessing import LabelEncoder
 
 
@@ -76,7 +77,7 @@ def get_test_iterator(data_dir, img_size, batch_size, num_parallel):
 def get_images_paths(data_dir):
     images_paths, labels = [], []
     for categ in os.listdir(data_dir):
-        if not categ.startswith('.') or categ != "saved.npy":
+        if not categ.startswith('.') and categ != "saved.npy":
             for file in os.listdir(f"{data_dir}/{categ}"):
                 if not file.startswith('.'):
                     labels.append(categ)
