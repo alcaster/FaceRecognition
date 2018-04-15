@@ -1,6 +1,9 @@
 import argparse
+import os
 
 from utils.argparse_utils import SmartFormatter
+
+dir_path = os.path.dirname(os.path.realpath(__file__))
 
 parser = argparse.ArgumentParser(description='', formatter_class=SmartFormatter)
 
@@ -21,7 +24,7 @@ parser.add_argument('--buffer_size', type=int, default=100, help='Buffer size fo
 ############################
 #   environment setting    #
 ############################
-parser.add_argument('--data_path', type=str, default='../data/train',
+parser.add_argument('--data_path', type=str, default=os.path.join(dir_path, '../data/train'),
                     help="""R|Directory where train set is stored. Format of directory:
 data_path
 │   class1
@@ -35,8 +38,8 @@ parser.add_argument('--log_dir', type=str, default='../out/1', help='Directory w
 #   testing setting    #
 ############################
 parser.add_argument('--test', action='store_true', help="Test? Default->training.")
-parser.add_argument('--test_set_path', type=str, default='../data/test',
+parser.add_argument('--test_set_path', type=str, default=os.path.join(dir_path, '../data/test'),
                     help='Same format as data_path')
-parser.add_argument('--checkpoint_path', type=str, default='../out/1', help='')
+parser.add_argument('--checkpoint_path', type=str, default=os.path.join(dir_path, '../out/1'), help='')
 
 FLAGS, unparsed = parser.parse_known_args()

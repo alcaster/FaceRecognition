@@ -1,4 +1,4 @@
-from datetime import timedelta, datetime
+from datetime import timedelta
 import itertools
 import os
 import time
@@ -8,6 +8,7 @@ from tensorflow.python.client import device_lib
 from config import FLAGS
 from models.convnet.convnet import Model
 from data_processing import get_train_valid_iterators, get_test_iterator
+from utils.metrics import AvgCounter
 
 tf.logging.set_verbosity(tf.logging.INFO)
 
@@ -32,7 +33,8 @@ def training(iterator: tf.data.Iterator, handle: tf.placeholder, training_iterat
         while True:
             epoch = int(FLAGS.batch_size * num_iterations / dataset_size[0])
             if num_iterations % 300 == 1:
-                summary, (acc, precision, recall) = sess.run([merged, model.metrics], feed_dict={handle: validation_handle})
+                summary, (acc, precision, recall) = sess.run([merged, model.metrics],
+                                                             feed_dict={handle: validation_handle})
                 test_writer.add_summary(summary, num_iterations)
                 tf.logging.info(
                     f'Epoch: {epoch}, batch: {num_iterations}, test - accuracy: {acc*100}%, precision: {precision*100}%, recall: {recall*100}%')
@@ -52,7 +54,7 @@ def training(iterator: tf.data.Iterator, handle: tf.placeholder, training_iterat
                 saver.save(sess, os.path.join(FLAGS.log_dir, 'model'), global_step=num_iterations)
             else:
                 try:
-                    _ , _ = sess.run([merged, model.optimize], feed_dict={handle: training_handle})
+                    _, _ = sess.run([merged, model.optimize], feed_dict={handle: training_handle})
                     # train_writer.add_summary(summary, num_iterations)
                 except tf.errors.OutOfRangeError:
                     break
@@ -68,30 +70,25 @@ def validate(model, handle, validation_handle, sess, steps=None):
     """
     Batches always have the same size so it is possible to take average of each metric.
     """
-    i = 0
-    total_acc, total_prec, total_rec = 0, 0, 0
+    acc_counter, prec_counter, rec_counter = AvgCounter(), AvgCounter(), AvgCounter()
     generator = itertools.count() if steps is None else range(steps)
     for _ in generator:
         try:
             acc, prec, rec = sess.run(model.metrics, feed_dict={handle: validation_handle})
-            i += 1
-            total_acc += acc
-            total_prec += prec
-            total_rec += rec
+            acc_counter.add(acc)
+            prec_counter.add(prec)
+            rec_counter.add(rec)
         except tf.errors.OutOfRangeError:
             break
-    accuracy_valid = total_acc / i
-    precision_valid = total_prec / i
-    recall_valid = total_rec / i
 
     tf.logging.info(
-        "Average validation set accuracy:{:.2f}%, accuracy:{:.2f}%, accuracy:{:.2f}%".format(accuracy_valid * 100,
-                                                                                             precision_valid * 100,
-                                                                                             recall_valid * 100))
-    return accuracy_valid
+        "Average validation set accuracy:{:.2f}%, accuracy:{:.2f}%, accuracy:{:.2f}%".format(acc_counter.average * 100,
+                                                                                             prec_counter.average * 100,
+                                                                                             rec_counter.average * 100))
 
 
 def test(test_iterator: tf.data.Iterator, dataset_size: int, checkpoint_path: str):
+    tf.logging.info(f"Dataset size {dataset_size}; Batch size {FLAGS.batch_size}")
     start = time.time()
     image, label = test_iterator.get_next()
     model = Model(image, label, 4)
@@ -99,28 +96,22 @@ def test(test_iterator: tf.data.Iterator, dataset_size: int, checkpoint_path: st
         saver = tf.train.Saver()
         saver.restore(sess, tf.train.latest_checkpoint(checkpoint_path))
         tf.logging.info(f"Successfully loaded model from checkpoint:{checkpoint_path}")
-        i = 0
-        total_acc, total_prec, total_rec = 0, 0, 0
+        acc_counter, prec_counter, rec_counter = AvgCounter(), AvgCounter(), AvgCounter()
         while True:
             try:
                 acc, prec, rec = sess.run(model.metrics)
-                print(acc)  # lots of 0 later hmmmm
-                i += 1
-                total_acc += acc
-                total_prec += prec
-                total_rec += rec
+                print(acc)
+                acc_counter.add(acc)
+                prec_counter.add(prec)
+                rec_counter.add(rec)
             except tf.errors.OutOfRangeError:
                 break
 
-    tf.logging.info(f"Dataset size {dataset_size}; Iterations {i}; Batch size {FLAGS.batch_size}")
-    accuracy_valid = total_acc / i
-    precision_valid = total_prec / i
-    recall_valid = total_rec / i
     time_dif = time.time() - start
     tf.logging.info(
-        "Average validation set accuracy:{:.2f}%, precision:{:.2f}%, recall:{:.2f}%".format(accuracy_valid * 100,
-                                                                                            precision_valid * 100,
-                                                                                            recall_valid * 100))
+        "Average validation set accuracy:{:.2f}%, precision:{:.2f}%, recall:{:.2f}%".format(acc_counter.average * 100,
+                                                                                            prec_counter.average * 100,
+                                                                                            rec_counter.average * 100))
     tf.logging.info("Time usage: " + str(timedelta(seconds=int(round(time_dif)))))
 
 
